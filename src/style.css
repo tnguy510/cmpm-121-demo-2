@@ -80,6 +80,11 @@ button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
+canvas {
+  border: 2px solid transparent;
+  border-color: #1a1a1a;
+  background-color: white;
+}
 
 @media (prefers-color-scheme: light) {
   :root {
