@@ -9,6 +9,11 @@ app.innerHTML = APP_NAME;
 header.innerHTML = "Drawing Time";
 app.append(header);
 
+interface Displayable {
+    display (cxt: CanvasRenderingContext2D): void;
+    addPoint (x: number, y: number): void;
+}
+
 const canvas = document.createElement("canvas");
 canvas.width = canvas.height = 256;
 
@@ -20,37 +25,57 @@ ctx.lineWidth = 2;
 
 const drawingChanged = new Event("drawing-changed");
 let isDrawing = false;
-let strokes: number[][][] = [];
-let strokeStack: number[][][] = [];
-let numStroke = -1;
+let strokes: Displayable[] = [];
+let strokeStack: Displayable[] = [];
+let currentStroke: Displayable;
+
+
+function DisplayObject(): Displayable {
+    const points: {x: number; y: number }[] = [];
+
+    function addPoint(x: number, y: number) {
+        points.push({x, y});
+    }
+
+    function display(ctx: CanvasRenderingContext2D) {
+        for(let i = 1; i < points.length - 1; i++) {
+            drawLine(ctx, points[i-1].x, points[i-1].y, points[i].x, points[i].y);
+        }
+    }
+
+    return {display, addPoint};
+}
+
+function displayAll(ctx: CanvasRenderingContext2D){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    strokes.forEach(stroke => stroke.display(ctx));
+}
 
 canvas.addEventListener("drawing-changed", () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for(let i = 0; i < strokes.length; i++){
-        for(let j = 1; j < strokes[i].length; j++){
-            drawLine(ctx, strokes[i][j-1][0], strokes[i][j-1][1], strokes[i][j][0], strokes[i][j][1]);
-        }
+        strokes[i].display(ctx);
     }
 });
 
 canvas.addEventListener("mousedown", (event) => {
-    strokes.push([]);
     strokeStack = [];
-    numStroke++;
-    strokes[numStroke].push([event.offsetX, event.offsetY]);
+    currentStroke = DisplayObject();
+    currentStroke.addPoint(event.offsetX, event.offsetY);
+    strokes.push(currentStroke);
     isDrawing = true;
 });
 
 canvas.addEventListener("mousemove", (event) => {
     if(isDrawing) {
-        strokes[numStroke].push([event.offsetX, event.offsetY]);
+        currentStroke.addPoint(event.offsetX, event.offsetY);
         canvas.dispatchEvent(drawingChanged);
     }
 });
 
 document.addEventListener("mouseup", (event) => {
     if(isDrawing) {
-        strokes[numStroke].push([event.offsetX, event.offsetY]);
+        currentStroke.addPoint(event.offsetX, event.offsetY);
         isDrawing = false;
         canvas.dispatchEvent(drawingChanged);
     }
@@ -71,7 +96,6 @@ app.append(clearButton);
 clearButton.addEventListener("click", () => {
     strokes = [];
     strokeStack = [];
-    numStroke = -1;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 })
 
@@ -83,7 +107,6 @@ undoButton.addEventListener("click", () => {
     if(strokes.length){
         strokeStack.push(strokes.pop()!);
         canvas.dispatchEvent(drawingChanged);
-        numStroke--;
     }
 });
 
@@ -95,6 +118,5 @@ redoButton.addEventListener("click", () => {
     if(strokeStack.length){
         strokes.push(strokeStack.pop()!);
         canvas.dispatchEvent(drawingChanged);
-        numStroke++;
     }
 })
