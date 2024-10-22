@@ -19,28 +19,38 @@ ctx.strokeStyle = "black";
 ctx.lineWidth = 2;
 
 let cursorX, cursorY = 0;
+const drawingChanged = new Event("drawing-changed");
 let isDrawing = false;
+let strokes: number[][][] = [[]];
+let numStroke = 0;
 
+canvas.addEventListener("drawing-changed", () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for(let i = 0; i < strokes.length; i++){
+        for(let j = 1; j < strokes[i].length; j++){
+            drawLine(ctx, strokes[i][j-1][0], strokes[i][j-1][1], strokes[i][j][0], strokes[i][j][1]);
+        }
+    }
+    console.log("redrawing");
+});
 
 canvas.addEventListener("mousedown", (event) => {
-    cursorX = event.offsetX;
-    cursorY = event.offsetY;
+    strokes[numStroke].push([event.offsetX, event.offsetY]);
     isDrawing = true;
 });
 
 canvas.addEventListener("mousemove", (event) => {
     if(isDrawing) {
-        drawLine(ctx, cursorX, cursorY, event.offsetX, event.offsetY);
-        cursorX = event.offsetX;
-        cursorY = event.offsetY;
+        strokes[numStroke].push([event.offsetX, event.offsetY]);
+        canvas.dispatchEvent(drawingChanged);
     }
 });
 
 canvas.addEventListener("mouseup", (event) => {
     if(isDrawing) {
-        drawLine(ctx, cursorX, cursorY, event.offsetX, event.offsetY);
-        cursorX = 0;
-        cursorY = 0;
+        strokes[numStroke].push([event.offsetX, event.offsetY]);
+        strokes.push([]);
+        numStroke++;
         isDrawing = false;
     }
 });
@@ -58,5 +68,7 @@ clearButton.innerHTML = "Clear Canvas";
 app.append(clearButton);
 
 clearButton.addEventListener("click", () => {
+    strokes = [[]];
+    numStroke = 0;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 })
