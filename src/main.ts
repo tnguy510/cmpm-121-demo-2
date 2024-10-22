@@ -18,11 +18,11 @@ app.append(canvas);
 ctx.strokeStyle = "black";
 ctx.lineWidth = 2;
 
-let cursorX, cursorY = 0;
 const drawingChanged = new Event("drawing-changed");
 let isDrawing = false;
-let strokes: number[][][] = [[]];
-let numStroke = 0;
+let strokes: number[][][] = [];
+let strokeStack: number[][][] = [];
+let numStroke = -1;
 
 canvas.addEventListener("drawing-changed", () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -31,10 +31,12 @@ canvas.addEventListener("drawing-changed", () => {
             drawLine(ctx, strokes[i][j-1][0], strokes[i][j-1][1], strokes[i][j][0], strokes[i][j][1]);
         }
     }
-    console.log("redrawing");
 });
 
 canvas.addEventListener("mousedown", (event) => {
+    strokes.push([]);
+    strokeStack = [];
+    numStroke++;
     strokes[numStroke].push([event.offsetX, event.offsetY]);
     isDrawing = true;
 });
@@ -46,12 +48,11 @@ canvas.addEventListener("mousemove", (event) => {
     }
 });
 
-canvas.addEventListener("mouseup", (event) => {
+document.addEventListener("mouseup", (event) => {
     if(isDrawing) {
         strokes[numStroke].push([event.offsetX, event.offsetY]);
-        strokes.push([]);
-        numStroke++;
         isDrawing = false;
+        canvas.dispatchEvent(drawingChanged);
     }
 });
 
@@ -68,7 +69,32 @@ clearButton.innerHTML = "Clear Canvas";
 app.append(clearButton);
 
 clearButton.addEventListener("click", () => {
-    strokes = [[]];
-    numStroke = 0;
+    strokes = [];
+    strokeStack = [];
+    numStroke = -1;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+})
+
+const undoButton = document.createElement("button");
+undoButton.innerHTML = "Undo";
+app.append(undoButton);
+
+undoButton.addEventListener("click", () => {
+    if(strokes.length){
+        strokeStack.push(strokes.pop()!);
+        canvas.dispatchEvent(drawingChanged);
+        numStroke--;
+    }
+});
+
+const redoButton = document.createElement("button");
+redoButton.innerHTML = "Redo";
+app.append(redoButton);
+
+redoButton.addEventListener("click", () => {
+    if(strokeStack.length){
+        strokes.push(strokeStack.pop()!);
+        canvas.dispatchEvent(drawingChanged);
+        numStroke++;
+    }
 })
