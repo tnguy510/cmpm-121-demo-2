@@ -6,7 +6,7 @@ const header = document.createElement("h1");
 
 document.title = APP_NAME;
 app.innerHTML = APP_NAME;
-header.innerHTML = "Drawing Time";
+header.innerHTML = "DRAWING TIME";
 app.append(header);
 
 interface Displayable {
@@ -23,7 +23,7 @@ let currentWidth: number = 2;
 ctx.strokeStyle = "black";
 
 const drawingChanged = new Event("drawing-changed");
-const stickerArr = ["🍌", "🔪", "🫠"];
+const stickerArr = ["🍝", "🦴", "🧩"];
 let isDrawing = false;
 let strokes: Displayable[] = [];
 let strokeStack: Displayable[] = [];
@@ -31,40 +31,23 @@ let currentStroke: ReturnType<typeof DisplayStroke> | null = null;
 let activeToolPreview: Displayable | null = null;
 let currentSticker: ReturnType<typeof createSticker> | null = null;
 let lastSticker: string;
-let stickerMode = false;
 
 function DisplayStroke(): Displayable & { addPoint (x: number, y: number): void}{
     const points: {x: number; y: number }[] = [];
+    const coords = points.length;
     const brushWidth = currentWidth;
 
     function display(ctx: CanvasRenderingContext2D) {
         for(let i = 1; i < points.length - 1; i++) {
             drawLine(ctx, points[i-1].x, points[i-1].y, points[i].x, points[i].y, brushWidth);
         }
+        ctx.font = brushWidth+"px serif";
+        ctx.fillText(lastSticker, points[coords].x, points[coords].y)
     }
 
     return {display, 
         addPoint: (x: number, y: number): void => {
         points.push({x, y});
-    }};
-}
-
-function DisplaySticker(str: string): Displayable & { addPoint (x: number, y: number): void}{
-    const points: {x: number; y: number }[] = [];
-    const coords = points.length;
-    const brushWidth = currentWidth;
-    const sticker = str;
-
-    function display(ctx: CanvasRenderingContext2D) {
-        ctx.textBaseline = "middle";
-        ctx.textAlign = "center";
-        ctx.font = brushWidth+"px serif";
-        ctx.fillText(sticker, points[coords].x, points[coords].y)
-    }
-
-    return {display, 
-        addPoint: (x: number, y: number): void => {
-        points.push({x, y})
     }};
 }
 
@@ -89,7 +72,6 @@ function createStickerButton(sticker: string){
 
     stickerButton.addEventListener("click", () => {
         lastSticker = stickerButton.innerHTML;
-        stickerMode = true;
     });
 }
 
@@ -133,6 +115,7 @@ canvas.addEventListener("drawing-changed", () => {
 
 canvas.addEventListener("mousedown", (event) => {
     if(lastSticker){
+        currentStroke = DisplayStroke();
         currentSticker = createSticker(event.offsetX, event.offsetY, lastSticker);
         strokes.push(currentSticker);
         lastSticker = "";
@@ -172,7 +155,6 @@ document.addEventListener("mouseup", (event) => {
 
 });
 
-
 canvas.addEventListener("tool-moved", (event) => {
     const detail = (event as CustomEvent).detail;
     const {x, y, sticker} = detail;
@@ -196,7 +178,7 @@ canvas.addEventListener("tool-moved", (event) => {
 });
 
 const clearButton = document.createElement("button");
-clearButton.innerHTML = "Clear Canvas";
+clearButton.innerHTML = "CLEAR CANVAS";
 app.append(clearButton);
 
 clearButton.addEventListener("click", () => {
@@ -206,7 +188,7 @@ clearButton.addEventListener("click", () => {
 })
 
 const undoButton = document.createElement("button");
-undoButton.innerHTML = "Undo";
+undoButton.innerHTML = "UNDO";
 app.append(undoButton);
 
 undoButton.addEventListener("click", () => {
@@ -217,7 +199,7 @@ undoButton.addEventListener("click", () => {
 });
 
 const redoButton = document.createElement("button");
-redoButton.innerHTML = "Redo";
+redoButton.innerHTML = "REDO";
 app.append(redoButton);
 
 redoButton.addEventListener("click", () => {
@@ -228,21 +210,19 @@ redoButton.addEventListener("click", () => {
 });
 
 const thinButton = document.createElement("button");
-thinButton.innerHTML = "Thin Brush";
+thinButton.innerHTML = "THIN BRUSH";
 app.append(thinButton);
 
 thinButton.addEventListener("click", () => {
-    currentWidth = 1;
-    stickerMode = false;
+    currentWidth = 2;
 });
 
 const thickButton = document.createElement("button");
-thickButton.innerHTML = "Thick Brush";
+thickButton.innerHTML = "THICK BRUSH";
 app.append(thickButton);
 
 thickButton.addEventListener("click", () => {
     currentWidth = 5;
-    stickerMode = false;
 });
 
 for (const i in stickerArr){
