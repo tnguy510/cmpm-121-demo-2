@@ -20,8 +20,8 @@ canvas.width = canvas.height = 256;
 const ctx = <CanvasRenderingContext2D>canvas.getContext("2d");
 app.append(canvas);
 
+let currentWidth: number = 2;
 ctx.strokeStyle = "black";
-ctx.lineWidth = 2;
 
 const drawingChanged = new Event("drawing-changed");
 let isDrawing = false;
@@ -32,6 +32,7 @@ let currentStroke: Displayable;
 
 function DisplayObject(): Displayable {
     const points: {x: number; y: number }[] = [];
+    const brushWidth = currentWidth;
 
     function addPoint(x: number, y: number) {
         points.push({x, y});
@@ -39,7 +40,7 @@ function DisplayObject(): Displayable {
 
     function display(ctx: CanvasRenderingContext2D) {
         for(let i = 1; i < points.length - 1; i++) {
-            drawLine(ctx, points[i-1].x, points[i-1].y, points[i].x, points[i].y);
+            drawLine(ctx, points[i-1].x, points[i-1].y, points[i].x, points[i].y, brushWidth);
         }
     }
 
@@ -69,6 +70,7 @@ canvas.addEventListener("mousedown", (event) => {
 canvas.addEventListener("mousemove", (event) => {
     if(isDrawing) {
         currentStroke.addPoint(event.offsetX, event.offsetY);
+        displayAll(ctx);
         canvas.dispatchEvent(drawingChanged);
     }
 });
@@ -81,8 +83,9 @@ document.addEventListener("mouseup", (event) => {
     }
 });
 
-function drawLine(line: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number) {
+function drawLine(line: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, width: number) {
     line.beginPath();
+    line.lineWidth = width;
     line.moveTo(x1, y1);
     line.lineTo(x2, y2);
     line.stroke();
@@ -119,4 +122,20 @@ redoButton.addEventListener("click", () => {
         strokes.push(strokeStack.pop()!);
         canvas.dispatchEvent(drawingChanged);
     }
-})
+});
+
+const thinButton = document.createElement("button");
+thinButton.innerHTML = "Thin Brush";
+app.append(thinButton);
+
+thinButton.addEventListener("click", () => {
+    currentWidth = 1;
+});
+
+const thickButton = document.createElement("button");
+thickButton.innerHTML = "Thick Brush";
+app.append(thickButton);
+
+thickButton.addEventListener("click", () => {
+    currentWidth = 5;
+});
