@@ -11,7 +11,6 @@ app.append(header);
 
 interface Displayable {
     display (cxt: CanvasRenderingContext2D): void;
-    addPoint (x: number, y: number): void;
 }
 
 const canvas = document.createElement("canvas");
@@ -27,16 +26,12 @@ const drawingChanged = new Event("drawing-changed");
 let isDrawing = false;
 let strokes: Displayable[] = [];
 let strokeStack: Displayable[] = [];
-let currentStroke: Displayable;
+let currentStroke: ReturnType<typeof DisplayObject> | null = null;
+let activeToolPreview: Displayable | null = null;
 
-
-function DisplayObject(): Displayable {
+function DisplayObject(): Displayable & { addPoint (x: number, y: number): void}{
     const points: {x: number; y: number }[] = [];
     const brushWidth = currentWidth;
-
-    function addPoint(x: number, y: number) {
-        points.push({x, y});
-    }
 
     function display(ctx: CanvasRenderingContext2D) {
         for(let i = 1; i < points.length - 1; i++) {
@@ -44,8 +39,12 @@ function DisplayObject(): Displayable {
         }
     }
 
-    return {display, addPoint};
+    return {display, 
+        addPoint: (x: number, y: number): void => {
+        points.push({x, y});
+    }};
 }
+
 
 function displayAll(ctx: CanvasRenderingContext2D){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -53,10 +52,8 @@ function displayAll(ctx: CanvasRenderingContext2D){
 }
 
 canvas.addEventListener("drawing-changed", () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for(let i = 0; i < strokes.length; i++){
-        strokes[i].display(ctx);
-    }
+    displayAll(ctx);
+    activeToolPreview?.display(ctx);
 });
 
 canvas.addEventListener("mousedown", (event) => {
@@ -65,23 +62,60 @@ canvas.addEventListener("mousedown", (event) => {
     currentStroke.addPoint(event.offsetX, event.offsetY);
     strokes.push(currentStroke);
     isDrawing = true;
+    activeToolPreview = null;
 });
 
 canvas.addEventListener("mousemove", (event) => {
-    if(isDrawing) {
+    if(isDrawing && currentStroke) {
         currentStroke.addPoint(event.offsetX, event.offsetY);
         displayAll(ctx);
         canvas.dispatchEvent(drawingChanged);
     }
+    else{
+        const toolMovedEvent = new CustomEvent("tool-moved", {
+            detail: {x: event.offsetX, y: event.offsetY}
+        });
+        canvas.dispatchEvent(toolMovedEvent);
+    }
+    canvas.dispatchEvent(drawingChanged);
+
 });
 
 document.addEventListener("mouseup", (event) => {
-    if(isDrawing) {
+    if(isDrawing && currentStroke) {
         currentStroke.addPoint(event.offsetX, event.offsetY);
         isDrawing = false;
         canvas.dispatchEvent(drawingChanged);
     }
+
 });
+
+canvas.addEventListener("tool-moved", (event) => {
+    const detail = (event as CustomEvent).detail;
+    const {x, y} = detail;
+
+    if(!isDrawing){
+        activeToolPreview = createToolPreview(x, y);
+        displayAll(ctx);
+        canvas.style.cursor = "none";
+    }
+    else{
+        canvas.style.cursor = "default";
+    }
+});
+
+function createToolPreview(mouseX: number, mouseY: number): Displayable {
+    return {
+        display: (ctx: CanvasRenderingContext2D) => {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 5, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+            ctx.fill();
+            ctx.restore();
+        }
+    };
+}
 
 function drawLine(line: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, width: number) {
     line.beginPath();
