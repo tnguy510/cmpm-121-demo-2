@@ -225,6 +225,17 @@ thickButton.addEventListener("click", () => {
     currentWidth = 5;
 });
 
+const customStickerButton = document.createElement("button");
+customStickerButton.innerHTML = "Custom Sticker";
+app.append(customStickerButton);
+
+customStickerButton.addEventListener("click", () => {
+    const text = prompt("Add sticker text");
+    if(text){
+        createStickerButton(text!);
+    }
+})
+
 for (const i in stickerArr){
     createStickerButton(stickerArr[i]);
 }
