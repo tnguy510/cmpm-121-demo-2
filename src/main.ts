@@ -10,7 +10,8 @@ header.innerHTML = "DRAWING TIME";
 app.append(header);
 
 interface Displayable {
-    display (cxt: CanvasRenderingContext2D): void;
+    display (ctx: CanvasRenderingContext2D): void;
+    scale (ctx: CanvasRenderingContext2D, scaleGoal: number): void;
 } 
 
 const canvas = document.createElement("canvas");
@@ -31,24 +32,38 @@ let currentStroke: ReturnType<typeof DisplayStroke> | null = null;
 let activeToolPreview: Displayable | null = null;
 let currentSticker: ReturnType<typeof createSticker> | null = null;
 let lastSticker: string;
+let scaleGoal = 4;
 
 function DisplayStroke(): Displayable & { addPoint (x: number, y: number): void}{
     const points: {x: number; y: number }[] = [];
     const coords = points.length;
+    const currScale = scaleGoal;
     const brushWidth = currentWidth;
 
     function display(ctx: CanvasRenderingContext2D) {
         for(let i = 1; i < points.length - 1; i++) {
             drawLine(ctx, points[i-1].x, points[i-1].y, points[i].x, points[i].y, brushWidth);
         }
-        ctx.font = brushWidth+"px serif";
-        ctx.fillText(lastSticker, points[coords].x, points[coords].y)
+    }
+
+    function scale(ctx: CanvasRenderingContext2D, scale: number){
+        const scaleArr: {x: number; y: number }[] = [];
+        const scaleLine: number = brushWidth * currScale;
+        for(let i = 1; i < points.length; i++){
+            const x = points[i].x *= currScale;
+            const y = points[i].y *= currScale;
+            scaleArr.push({x, y});
+        }
+    
+        for(let i = 1; i < scaleArr.length; i++){
+            drawLine(ctx, scaleArr[i-1].x, scaleArr[i-1].y, scaleArr[i].x, scaleArr[i].y, scaleLine)
+        }
     }
 
     return {display, 
-        addPoint: (x: number, y: number): void => {
-        points.push({x, y});
-    }};
+        addPoint: (x: number, y: number): void => {points.push({x, y});}, 
+        scale
+    };
 }
 
 function displayAll(ctx: CanvasRenderingContext2D){
@@ -80,6 +95,10 @@ function createSticker(mouseX: number, mouseY: number, sticker: string): Display
         display: (ctx: CanvasRenderingContext2D) => {
             ctx.font = "40px Arial";
             ctx.fillText(sticker, mouseX, mouseY);
+        },
+        scale: (ctx: CanvasRenderingContext2D, scaleGoal: number) => {
+            ctx.font = currentWidth * scaleGoal+"px serif";
+            ctx.fillText(sticker, mouseX, mouseY);
         }
     }
 }
@@ -93,6 +112,11 @@ function createToolPreview(mouseX: number, mouseY: number): Displayable {
             ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
             ctx.fill();
             ctx.restore();
+        },
+        scale: (ctx: CanvasRenderingContext2D, scaleGoal) => {
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 5, 0, Math.PI * 2);
         }
     };
 }
@@ -104,6 +128,11 @@ function createStickerPreview(mouseX: number, mouseY: number, sticker: string): 
             ctx.font = "40px Arial";
             ctx.fillText(sticker, mouseX, mouseY);
             ctx.restore();
+        },
+        scale: (ctx: CanvasRenderingContext2D, scaleGoal) => {
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 5, 0, Math.PI * 2);
         }
     }
 }
@@ -226,11 +255,11 @@ thickButton.addEventListener("click", () => {
 });
 
 const customStickerButton = document.createElement("button");
-customStickerButton.innerHTML = "Custom Sticker";
+customStickerButton.innerHTML = "CUSTOM STICKER";
 app.append(customStickerButton);
 
 customStickerButton.addEventListener("click", () => {
-    const text = prompt("Add sticker text");
+    const text = prompt("ADD STICKER TEXT");
     if(text){
         createStickerButton(text!);
     }
@@ -239,3 +268,24 @@ customStickerButton.addEventListener("click", () => {
 for (const i in stickerArr){
     createStickerButton(stickerArr[i]);
 }
+
+const exportButton = document.createElement("button");
+exportButton.innerHTML = "EXPORT";
+app.append(exportButton);
+
+exportButton.addEventListener("click", () => {
+    const canvasExport = document.createElement("canvas");
+    const ctxExport = <CanvasRenderingContext2D>canvasExport.getContext("2d");
+    canvasExport.width = canvasExport.height = 1024;
+    ctxExport.fillStyle = "white";
+    ctxExport.fillRect(0, 0, canvasExport.width, canvasExport.height);
+
+    for(let i = 0; i < strokes.length; i++){
+        strokes[i].scale(ctxExport, scaleGoal);
+    }
+
+    const exportImage = document.createElement("a");
+    exportImage.href = canvasExport.toDataURL("image/png");
+    exportImage.download = "canvas.png";
+    exportImage.click();
+});
