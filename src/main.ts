@@ -28,6 +28,8 @@ const stickerContainer = document.createElement("div");
 app.append(stickerContainer);
 
 let currentWidth: number = 2;
+let colorArray = ["black", "blue", "red", "orange"];
+let currentColor = "black";
 ctx.strokeStyle = "black";
 
 const drawingChanged = new Event("drawing-changed");
@@ -45,24 +47,25 @@ function DisplayStroke(): Displayable & { addPoint (x: number, y: number): void}
     const points: {x: number; y: number }[] = [];
     const currScale = scaleGoal;
     const brushWidth = currentWidth;
+    const brushColor = currentColor;
 
     function display(ctx: CanvasRenderingContext2D) {
         for(let i = 1; i < points.length - 1; i++) {
-            drawLine(ctx, points[i-1].x, points[i-1].y, points[i].x, points[i].y, brushWidth);
+            drawLine(ctx, points[i-1].x, points[i-1].y, points[i].x, points[i].y, brushWidth, brushColor);
         }
     }
 
     function scale(ctx: CanvasRenderingContext2D, scale: number){
         const scaleArr: {x: number; y: number }[] = [];
-        const scaleLine: number = brushWidth * currScale;
+        const scaleLine: number = brushWidth * scale;
         for(let i = 1; i < points.length; i++){
-            const x = points[i].x *= currScale;
-            const y = points[i].y *= currScale;
+            const x = points[i].x * scale;
+            const y = points[i].y * scale;
             scaleArr.push({x, y});
         }
     
         for(let i = 1; i < scaleArr.length; i++){
-            drawLine(ctx, scaleArr[i-1].x, scaleArr[i-1].y, scaleArr[i].x, scaleArr[i].y, scaleLine)
+            drawLine(ctx, scaleArr[i-1].x, scaleArr[i-1].y, scaleArr[i].x, scaleArr[i].y, scaleLine, brushColor);
         }
     }
 
@@ -77,13 +80,19 @@ function displayAll(ctx: CanvasRenderingContext2D){
     strokes.forEach(stroke => stroke.display(ctx));
 }
 
-function drawLine(line: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, width: number) {
+function drawLine(line: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, width: number, color: string) {
     line.beginPath();
     line.lineWidth = width;
+    line.strokeStyle = color;
     line.moveTo(x1, y1);
     line.lineTo(x2, y2);
     line.stroke();
     line.closePath();
+}
+
+function randomLineColor(){
+    currentColor = colorArray[Math.floor(Math.random() * colorArray.length)];
+    console.log(currentColor);
 }
 
 function createStickerButton(sticker: string){
@@ -115,7 +124,7 @@ function createToolPreview(mouseX: number, mouseY: number): Displayable {
             ctx.save();
             ctx.beginPath();
             ctx.arc(mouseX, mouseY, 5, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
+            ctx.fillStyle = currentColor;
             ctx.fill();
             ctx.restore();
         },
@@ -153,7 +162,9 @@ canvas.addEventListener("mousedown", (event) => {
         currentStroke = DisplayStroke();
         currentSticker = createSticker(event.offsetX, event.offsetY, lastSticker);
         strokes.push(currentSticker);
-        lastSticker = "";
+
+        //If you want to only place one sticker at a time uncomment this line
+        //lastSticker = "";
     }
     else{
         currentStroke = DisplayStroke();
@@ -249,7 +260,9 @@ thinButton.innerHTML = "THIN BRUSH";
 toolsContainer.append(thinButton);
 
 thinButton.addEventListener("click", () => {
+    lastSticker = "";
     currentWidth = 2;
+    randomLineColor();
 });
 
 const thickButton = document.createElement("button");
@@ -257,7 +270,9 @@ thickButton.innerHTML = "THICK BRUSH";
 toolsContainer.append(thickButton);
 
 thickButton.addEventListener("click", () => {
+    lastSticker = "";
     currentWidth = 5;
+    randomLineColor();
 });
 
 const customStickerButton = document.createElement("button");
