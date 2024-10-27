@@ -1,14 +1,15 @@
 import "./style.css";
 
-const APP_NAME = "Blows You Up";
+const APP_NAME = "THE  GREAT  PAPYRUS'S  NEW  HOBBY";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 const header = document.createElement("h1");
 
 document.title = APP_NAME;
 app.innerHTML = APP_NAME;
-header.innerHTML = "DRAWING TIME";
+header.innerHTML = "ITS DRAWING TIME";
 app.append(header);
 
+//Interface for all Displayable objects and what is required to return
 interface Displayable {
     display (ctx: CanvasRenderingContext2D): void;
     scale (ctx: CanvasRenderingContext2D, scaleGoal: number): void;
@@ -43,18 +44,21 @@ let currentSticker: ReturnType<typeof createSticker> | null = null;
 let lastSticker: string;
 let scaleGoal = 4;
 
+//Displays All Current Strokes to the canvas
 function DisplayStroke(): Displayable & { addPoint (x: number, y: number): void}{
     const points: {x: number; y: number }[] = [];
-    const currScale = scaleGoal;
     const brushWidth = currentWidth;
     const brushColor = currentColor;
 
+    //Reiterates through a "point" array where every point is saved with width and color that then 
+    //redraws the entire canvas
     function display(ctx: CanvasRenderingContext2D) {
         for(let i = 1; i < points.length - 1; i++) {
             drawLine(ctx, points[i-1].x, points[i-1].y, points[i].x, points[i].y, brushWidth, brushColor);
         }
     }
 
+    //Scales the canvas when export is called
     function scale(ctx: CanvasRenderingContext2D, scale: number){
         const scaleArr: {x: number; y: number }[] = [];
         const scaleLine: number = brushWidth * scale;
@@ -63,7 +67,8 @@ function DisplayStroke(): Displayable & { addPoint (x: number, y: number): void}
             const y = points[i].y * scale;
             scaleArr.push({x, y});
         }
-    
+        
+        //Redraws the canvas by the scaled goal
         for(let i = 1; i < scaleArr.length; i++){
             drawLine(ctx, scaleArr[i-1].x, scaleArr[i-1].y, scaleArr[i].x, scaleArr[i].y, scaleLine, brushColor);
         }
@@ -75,11 +80,13 @@ function DisplayStroke(): Displayable & { addPoint (x: number, y: number): void}
     };
 }
 
+//Clears the canvas and redraws each stroke in the stroke array
 function displayAll(ctx: CanvasRenderingContext2D){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     strokes.forEach(stroke => stroke.display(ctx));
 }
 
+//Takes a starting x and y coordinate and moves a canvas rendering object to the end x and y coordinate with respective width and color
 function drawLine(line: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, width: number, color: string) {
     line.beginPath();
     line.lineWidth = width;
@@ -105,6 +112,7 @@ function createStickerButton(sticker: string){
     });
 }
 
+//Creates a sticker which is a string. Scales up is scaling is called
 function createSticker(mouseX: number, mouseY: number, sticker: string): Displayable {
     return {
         display: (ctx: CanvasRenderingContext2D) => {
@@ -118,11 +126,13 @@ function createSticker(mouseX: number, mouseY: number, sticker: string): Display
     }
 }
 
+//Shows where the cursor is for the brush tools
 function createToolPreview(mouseX: number, mouseY: number): Displayable {
     return {
         display: (ctx: CanvasRenderingContext2D) => {
             ctx.save();
             ctx.beginPath();
+            //Creates the preview through Math
             ctx.arc(mouseX, mouseY, 5, 0, Math.PI * 2);
             ctx.fillStyle = currentColor;
             ctx.fill();
@@ -136,6 +146,7 @@ function createToolPreview(mouseX: number, mouseY: number): Displayable {
     };
 }
 
+//Shows where the cursor is for the stickers
 function createStickerPreview(mouseX: number, mouseY: number, sticker: string): Displayable {
     return {
         display: (ctx: CanvasRenderingContext2D) => {
@@ -152,10 +163,12 @@ function createStickerPreview(mouseX: number, mouseY: number, sticker: string): 
     }
 }
 
+//Event that's called whenever an edit is made to the canvas to update in real time
 canvas.addEventListener("drawing-changed", () => {
     displayAll(ctx);
     activeToolPreview?.display(ctx);
 });
+
 
 canvas.addEventListener("mousedown", (event) => {
     if(lastSticker){
@@ -171,6 +184,8 @@ canvas.addEventListener("mousedown", (event) => {
         currentStroke.addPoint(event.offsetX, event.offsetY);
         strokes.push(currentStroke);
     }
+
+    //strokeStack is set to empty so you cannot redo a previous stroke after undoing and drawing over it
     strokeStack = [];
     isDrawing = true;
     activeToolPreview = null;
@@ -201,6 +216,7 @@ document.addEventListener("mouseup", (event) => {
 
 });
 
+//Moves cursor around in real time for tooLPreview
 canvas.addEventListener("tool-moved", (event) => {
     const detail = (event as CustomEvent).detail;
     const {x, y, sticker} = detail;
@@ -227,6 +243,7 @@ const clearButton = document.createElement("button");
 clearButton.innerHTML = "CLEAR CANVAS";
 toolsContainer.append(clearButton);
 
+//Clears entire canvas
 clearButton.addEventListener("click", () => {
     strokes = [];
     strokeStack = [];
@@ -237,6 +254,7 @@ const undoButton = document.createElement("button");
 undoButton.innerHTML = "UNDO";
 toolsContainer.append(undoButton);
 
+//Undoes the most current stroke and adds it to a stack
 undoButton.addEventListener("click", () => {
     if(strokes.length){
         strokeStack.push(strokes.pop()!);
@@ -248,6 +266,7 @@ const redoButton = document.createElement("button");
 redoButton.innerHTML = "REDO";
 toolsContainer.append(redoButton);
 
+//Re adds the most current stroke in strokeStack
 redoButton.addEventListener("click", () => {
     if(strokeStack.length){
         strokes.push(strokeStack.pop()!);
@@ -279,6 +298,7 @@ const customStickerButton = document.createElement("button");
 customStickerButton.innerHTML = "CUSTOM STICKER";
 stickerContainer.append(customStickerButton);
 
+//Add a custom sticker which is based on a string
 customStickerButton.addEventListener("click", () => {
     const text = prompt("ADD STICKER TEXT");
     if(text){
@@ -294,6 +314,7 @@ const exportButton = document.createElement("button");
 exportButton.innerHTML = "EXPORT";
 toolsContainer.append(exportButton);
 
+//Exports entire canvas and scales up to 1024 by 1024
 exportButton.addEventListener("click", () => {
     const canvasExport = document.createElement("canvas");
     const ctxExport = <CanvasRenderingContext2D>canvasExport.getContext("2d");
