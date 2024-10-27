@@ -14,11 +14,18 @@ interface Displayable {
     scale (ctx: CanvasRenderingContext2D, scaleGoal: number): void;
 } 
 
+const toolsContainer = document.createElement("div");
+app.append(toolsContainer);
+
+
 const canvas = document.createElement("canvas");
 canvas.width = canvas.height = 256;
 
 const ctx = <CanvasRenderingContext2D>canvas.getContext("2d");
 app.append(canvas);
+
+const stickerContainer = document.createElement("div");
+app.append(stickerContainer);
 
 let currentWidth: number = 2;
 ctx.strokeStyle = "black";
@@ -82,7 +89,7 @@ function drawLine(line: CanvasRenderingContext2D, x1: number, y1: number, x2: nu
 function createStickerButton(sticker: string){
     const stickerButton = document.createElement("button");
     stickerButton.innerHTML = sticker;
-    app.append(stickerButton);
+    stickerContainer.append(stickerButton);
 
     stickerButton.addEventListener("click", () => {
         lastSticker = stickerButton.innerHTML;
@@ -207,7 +214,7 @@ canvas.addEventListener("tool-moved", (event) => {
 
 const clearButton = document.createElement("button");
 clearButton.innerHTML = "CLEAR CANVAS";
-app.append(clearButton);
+toolsContainer.append(clearButton);
 
 clearButton.addEventListener("click", () => {
     strokes = [];
@@ -217,7 +224,7 @@ clearButton.addEventListener("click", () => {
 
 const undoButton = document.createElement("button");
 undoButton.innerHTML = "UNDO";
-app.append(undoButton);
+toolsContainer.append(undoButton);
 
 undoButton.addEventListener("click", () => {
     if(strokes.length){
@@ -228,7 +235,7 @@ undoButton.addEventListener("click", () => {
 
 const redoButton = document.createElement("button");
 redoButton.innerHTML = "REDO";
-app.append(redoButton);
+toolsContainer.append(redoButton);
 
 redoButton.addEventListener("click", () => {
     if(strokeStack.length){
@@ -239,7 +246,7 @@ redoButton.addEventListener("click", () => {
 
 const thinButton = document.createElement("button");
 thinButton.innerHTML = "THIN BRUSH";
-app.append(thinButton);
+toolsContainer.append(thinButton);
 
 thinButton.addEventListener("click", () => {
     currentWidth = 2;
@@ -247,7 +254,7 @@ thinButton.addEventListener("click", () => {
 
 const thickButton = document.createElement("button");
 thickButton.innerHTML = "THICK BRUSH";
-app.append(thickButton);
+toolsContainer.append(thickButton);
 
 thickButton.addEventListener("click", () => {
     currentWidth = 5;
@@ -255,7 +262,7 @@ thickButton.addEventListener("click", () => {
 
 const customStickerButton = document.createElement("button");
 customStickerButton.innerHTML = "CUSTOM STICKER";
-app.append(customStickerButton);
+stickerContainer.append(customStickerButton);
 
 customStickerButton.addEventListener("click", () => {
     const text = prompt("ADD STICKER TEXT");
@@ -270,7 +277,7 @@ for (const i in stickerArr){
 
 const exportButton = document.createElement("button");
 exportButton.innerHTML = "EXPORT";
-app.append(exportButton);
+toolsContainer.append(exportButton);
 
 exportButton.addEventListener("click", () => {
     const canvasExport = document.createElement("canvas");
