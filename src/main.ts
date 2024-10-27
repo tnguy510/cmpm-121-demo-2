@@ -36,7 +36,6 @@ let scaleGoal = 4;
 
 function DisplayStroke(): Displayable & { addPoint (x: number, y: number): void}{
     const points: {x: number; y: number }[] = [];
-    const coords = points.length;
     const currScale = scaleGoal;
     const brushWidth = currentWidth;
 
@@ -97,8 +96,8 @@ function createSticker(mouseX: number, mouseY: number, sticker: string): Display
             ctx.fillText(sticker, mouseX, mouseY);
         },
         scale: (ctx: CanvasRenderingContext2D, scaleGoal: number) => {
-            ctx.font = currentWidth * scaleGoal+"px serif";
-            ctx.fillText(sticker, mouseX, mouseY);
+            ctx.font = 40 * scaleGoal+"px serif";
+            ctx.fillText(sticker, mouseX * scaleGoal, mouseY * scaleGoal);
         }
     }
 }
@@ -113,7 +112,7 @@ function createToolPreview(mouseX: number, mouseY: number): Displayable {
             ctx.fill();
             ctx.restore();
         },
-        scale: (ctx: CanvasRenderingContext2D, scaleGoal) => {
+        scale: (ctx: CanvasRenderingContext2D) => {
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(mouseX, mouseY, 5, 0, Math.PI * 2);
@@ -129,7 +128,7 @@ function createStickerPreview(mouseX: number, mouseY: number, sticker: string): 
             ctx.fillText(sticker, mouseX, mouseY);
             ctx.restore();
         },
-        scale: (ctx: CanvasRenderingContext2D, scaleGoal) => {
+        scale: (ctx: CanvasRenderingContext2D) => {
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.arc(mouseX, mouseY, 5, 0, Math.PI * 2);
