@@ -3,7 +3,7 @@ import "./style.css";
 const APP_NAME = "THE  GREAT  PAPYRUS'S  NEW  HOBBY";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 const header = document.createElement("h1");
-
+const audio = document.getElementById('audio') as HTMLAudioElement;
 document.title = APP_NAME;
 app.innerHTML = APP_NAME;
 header.innerHTML = "ITS DRAWING TIME";
@@ -34,7 +34,7 @@ let currentColor = "black";
 ctx.strokeStyle = "black";
 
 const drawingChanged = new Event("drawing-changed");
-const stickerArr = ["🍝", "🦴", "🧩"];
+const stickerArr = ["🍝", "🦴", "🧩","💀"];
 let isDrawing = false;
 let strokes: Displayable[] = [];
 let strokeStack: Displayable[] = [];
@@ -212,6 +212,9 @@ document.addEventListener("mouseup", (event) => {
         currentStroke.addPoint(event.offsetX, event.offsetY);
         isDrawing = false;
         canvas.dispatchEvent(drawingChanged);
+    }
+    if(audio.paused) {
+        audio.play();
     }
 
 });
