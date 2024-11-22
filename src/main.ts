@@ -9,42 +9,87 @@ app.innerHTML = APP_NAME;
 header.innerHTML = "ITS DRAWING TIME";
 app.append(header);
 
-//Interface for all Displayable objects and what is required to return
-interface Displayable {
-    display (ctx: CanvasRenderingContext2D): void;
-    scale (ctx: CanvasRenderingContext2D, scaleGoal: number): void;
-} 
+// Initialization of HTML Elements // ===================================
 
+// Tool Buttons
 const toolsContainer = document.createElement("div");
 app.append(toolsContainer);
 
+const clearButton = document.createElement("button");
+clearButton.innerHTML = "CLEAR CANVAS";
+toolsContainer.append(clearButton);
 
+const undoButton = document.createElement("button");
+undoButton.innerHTML = "UNDO";
+toolsContainer.append(undoButton);
+
+const redoButton = document.createElement("button");
+redoButton.innerHTML = "REDO";
+toolsContainer.append(redoButton);
+
+const thinButton = document.createElement("button");
+thinButton.innerHTML = "THIN BRUSH";
+toolsContainer.append(thinButton);
+
+const thickButton = document.createElement("button");
+thickButton.innerHTML = "THICK BRUSH";
+toolsContainer.append(thickButton);
+
+const exportButton = document.createElement("button");
+exportButton.innerHTML = "EXPORT";
+toolsContainer.append(exportButton);
+
+// Canvas
 const canvas = document.createElement("canvas");
 canvas.width = canvas.height = 256;
 
 const ctx = <CanvasRenderingContext2D>canvas.getContext("2d");
 app.append(canvas);
 
+// Sticker Buttons
 const stickerContainer = document.createElement("div");
 app.append(stickerContainer);
 
-let currentWidth: number = 2;
-let colorArray = ["black", "blue", "red", "orange"];
+const customStickerButton = document.createElement("button");
+customStickerButton.innerHTML = "CUSTOM STICKER";
+stickerContainer.append(customStickerButton);
+
+// Initialization of preset stickers
+const stickerArr = ["🍝", "🦴", "🧩"];
+
+for (const i in stickerArr){
+    createStickerButton(stickerArr[i]);
+}
+
+// =============================================================
+
+// Interface for all Displayable objects and what is required to return
+interface Displayable {
+    display (ctx: CanvasRenderingContext2D): void;
+    scale (ctx: CanvasRenderingContext2D, scaleGoal: number): void;
+} 
+
+// Stroke variables
+let currentWidth: number = 2; // Width of tool
+const colorArray = ["black", "blue", "red", "orange"]; // Colors to be used
 let currentColor = "black";
 ctx.strokeStyle = "black";
 
-const drawingChanged = new Event("drawing-changed");
-const stickerArr = ["🍝", "🦴", "🧩","💀"];
-let isDrawing = false;
 let strokes: Displayable[] = [];
-let strokeStack: Displayable[] = [];
+let strokeStack: Displayable[] = []; // Strokes being held
 let currentStroke: ReturnType<typeof DisplayStroke> | null = null;
-let activeToolPreview: Displayable | null = null;
+
+// Sticker variables
 let currentSticker: ReturnType<typeof createSticker> | null = null;
 let lastSticker: string;
-let scaleGoal = 4;
+const scaleGoal = 4;
 
-//Displays All Current Strokes to the canvas
+// Drawing
+const drawingChanged = new Event("drawing-changed");
+let isDrawing = false;
+let activeToolPreview: Displayable | null = null; // Preview of tool on cursor
+
+// Displays All Current Strokes to the canvas
 function DisplayStroke(): Displayable & { addPoint (x: number, y: number): void}{
     const points: {x: number; y: number }[] = [];
     const brushWidth = currentWidth;
@@ -80,13 +125,13 @@ function DisplayStroke(): Displayable & { addPoint (x: number, y: number): void}
     };
 }
 
-//Clears the canvas and redraws each stroke in the stroke array
+// Clears the canvas and redraws each stroke in the stroke array
 function displayAll(ctx: CanvasRenderingContext2D){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     strokes.forEach(stroke => stroke.display(ctx));
 }
 
-//Takes a starting x and y coordinate and moves a canvas rendering object to the end x and y coordinate with respective width and color
+// Takes a starting x and y coordinate and moves a canvas rendering object to the end x and y coordinate with respective width and color
 function drawLine(line: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, width: number, color: string) {
     line.beginPath();
     line.lineWidth = width;
@@ -112,7 +157,7 @@ function createStickerButton(sticker: string){
     });
 }
 
-//Creates a sticker which is a string. Scales up is scaling is called
+// Creates a sticker which is a string. Scales up is scaling is called
 function createSticker(mouseX: number, mouseY: number, sticker: string): Displayable {
     return {
         display: (ctx: CanvasRenderingContext2D) => {
@@ -126,7 +171,7 @@ function createSticker(mouseX: number, mouseY: number, sticker: string): Display
     }
 }
 
-//Shows where the cursor is for the brush tools
+// Shows where the cursor is for the brush tools
 function createToolPreview(mouseX: number, mouseY: number): Displayable {
     return {
         display: (ctx: CanvasRenderingContext2D) => {
@@ -146,7 +191,7 @@ function createToolPreview(mouseX: number, mouseY: number): Displayable {
     };
 }
 
-//Shows where the cursor is for the stickers
+// Shows where the cursor is for the stickers
 function createStickerPreview(mouseX: number, mouseY: number, sticker: string): Displayable {
     return {
         display: (ctx: CanvasRenderingContext2D) => {
@@ -163,12 +208,11 @@ function createStickerPreview(mouseX: number, mouseY: number, sticker: string): 
     }
 }
 
-//Event that's called whenever an edit is made to the canvas to update in real time
+// Event that's called whenever an edit is made to the canvas to update in real time
 canvas.addEventListener("drawing-changed", () => {
     displayAll(ctx);
     activeToolPreview?.display(ctx);
 });
-
 
 canvas.addEventListener("mousedown", (event) => {
     if(lastSticker){
@@ -219,7 +263,7 @@ document.addEventListener("mouseup", (event) => {
 
 });
 
-//Moves cursor around in real time for tooLPreview
+// Moves cursor around in real time for toolPreview
 canvas.addEventListener("tool-moved", (event) => {
     const detail = (event as CustomEvent).detail;
     const {x, y, sticker} = detail;
@@ -242,22 +286,16 @@ canvas.addEventListener("tool-moved", (event) => {
     }
 });
 
-const clearButton = document.createElement("button");
-clearButton.innerHTML = "CLEAR CANVAS";
-toolsContainer.append(clearButton);
 
-//Clears entire canvas
+// Clears entire canvas
 clearButton.addEventListener("click", () => {
     strokes = [];
     strokeStack = [];
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 })
 
-const undoButton = document.createElement("button");
-undoButton.innerHTML = "UNDO";
-toolsContainer.append(undoButton);
 
-//Undoes the most current stroke and adds it to a stack
+// Undoes the most current stroke and adds it to a stack
 undoButton.addEventListener("click", () => {
     if(strokes.length){
         strokeStack.push(strokes.pop()!);
@@ -265,11 +303,8 @@ undoButton.addEventListener("click", () => {
     }
 });
 
-const redoButton = document.createElement("button");
-redoButton.innerHTML = "REDO";
-toolsContainer.append(redoButton);
 
-//Re adds the most current stroke in strokeStack
+// Re adds the most current stroke in strokeStack
 redoButton.addEventListener("click", () => {
     if(strokeStack.length){
         strokes.push(strokeStack.pop()!);
@@ -277,31 +312,22 @@ redoButton.addEventListener("click", () => {
     }
 });
 
-const thinButton = document.createElement("button");
-thinButton.innerHTML = "THIN BRUSH";
-toolsContainer.append(thinButton);
 
+// Thins the stroke tool to a certain width
 thinButton.addEventListener("click", () => {
     lastSticker = "";
     currentWidth = 2;
     randomLineColor();
 });
 
-const thickButton = document.createElement("button");
-thickButton.innerHTML = "THICK BRUSH";
-toolsContainer.append(thickButton);
-
+// Thickens the stroke tool to a certain width
 thickButton.addEventListener("click", () => {
     lastSticker = "";
     currentWidth = 5;
     randomLineColor();
 });
 
-const customStickerButton = document.createElement("button");
-customStickerButton.innerHTML = "CUSTOM STICKER";
-stickerContainer.append(customStickerButton);
-
-//Add a custom sticker which is based on a string
+// Add a custom sticker which is based on a string
 customStickerButton.addEventListener("click", () => {
     const text = prompt("ADD STICKER TEXT");
     if(text){
@@ -309,15 +335,7 @@ customStickerButton.addEventListener("click", () => {
     }
 })
 
-for (const i in stickerArr){
-    createStickerButton(stickerArr[i]);
-}
-
-const exportButton = document.createElement("button");
-exportButton.innerHTML = "EXPORT";
-toolsContainer.append(exportButton);
-
-//Exports entire canvas and scales up to 1024 by 1024
+// Exports entire canvas and scales up to 1024 by 1024
 exportButton.addEventListener("click", () => {
     const canvasExport = document.createElement("canvas");
     const ctxExport = <CanvasRenderingContext2D>canvasExport.getContext("2d");
